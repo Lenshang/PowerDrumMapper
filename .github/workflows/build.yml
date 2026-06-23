@@ -1,0 +1,92 @@
+name: Build Plugins
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  # ============================================================
+  # Windows 构建
+  # ============================================================
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up MSVC Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Configure CMake
+        run: cmake -B build -S . -A x64
+
+      - name: Build
+        run: cmake --build build --config Release --parallel --target BitwigDrumMapper_VST3 BitwigDrumMapper_Standalone BitwigDrumMapper_CLAP
+
+      - name: Upload CLAP
+        uses: actions/upload-artifact@v4
+        with:
+          name: BitwigDrumMapper-Windows-CLAP
+          path: |
+            build/BitwigDrumMapper_artefacts/Release/CLAP/
+
+      - name: Upload VST3
+        uses: actions/upload-artifact@v4
+        with:
+          name: BitwigDrumMapper-Windows-VST3
+          path: |
+            build/BitwigDrumMapper_artefacts/Release/VST3/
+
+      - name: Upload Standalone
+        uses: actions/upload-artifact@v4
+        with:
+          name: BitwigDrumMapper-Windows-Standalone
+          path: |
+            build/BitwigDrumMapper_artefacts/Release/Standalone/
+
+  # ============================================================
+  # macOS 构建 (Universal Binary: Intel + Apple Silicon)
+  # ============================================================
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure CMake (Universal Binary)
+        run: |
+          cmake -B build -S . \
+            -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release --parallel --target BitwigDrumMapper_VST3 BitwigDrumMapper_Standalone BitwigDrumMapper_CLAP
+
+      - name: Upload CLAP
+        uses: actions/upload-artifact@v4
+        with:
+          name: BitwigDrumMapper-macOS-CLAP
+          path: |
+            build/BitwigDrumMapper_artefacts/Release/CLAP/
+
+      - name: Upload VST3
+        uses: actions/upload-artifact@v4
+        with:
+          name: BitwigDrumMapper-macOS-VST3
+          path: |
+            build/BitwigDrumMapper_artefacts/Release/VST3/
+
+      - name: Upload Standalone
+        uses: actions/upload-artifact@v4
+        with:
+          name: BitwigDrumMapper-macOS-Standalone
+          path: |
+            build/BitwigDrumMapper_artefacts/Release/Standalone/

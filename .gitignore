@@ -1,0 +1,26 @@
+# Build directories
+build/
+build-*/
+out/
+
+# IDE / system files
+.vs/
+.vscode/
+.idea/
+*.user
+*.tss
+CMakeSettings.json
+.DS_Store
+Thumbs.db
+
+# Plugin artefacts
+*.clap
+*.vst3
+*.component
+*.app
+*.dll
+
+# Compiled objects
+*.o
+*.obj
+*.pdb
