@@ -169,7 +169,12 @@ PowerDrumMapper/
 
 ## CI/CD
 
-GitHub Actions automatically builds Windows and macOS (Universal Binary) artifacts on every push and tag. See [`.github/workflows/build.yml`](.github/workflows/build.yml).
+GitHub Actions builds Windows and macOS (Universal Binary) artifacts and runs the unit tests on every push and pull request. Pushing a `v*` tag (e.g. `v0.2.0`) additionally publishes a GitHub Release with `PowerDrumMapper-Windows.zip` and `PowerDrumMapper-macOS.zip` (each containing CLAP / VST3 / Standalone). See [`.github/workflows/build.yml`](.github/workflows/build.yml).
+
+```bash
+git tag v0.2.0
+git push origin v0.2.0   # triggers the release build
+```
 
 ## Note Naming Convention
 

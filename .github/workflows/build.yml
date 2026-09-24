@@ -30,6 +30,12 @@ jobs:
       - name: Build
         run: cmake --build build --config Release --parallel --target PowerDrumMapper_VST3 PowerDrumMapper_Standalone PowerDrumMapper_CLAP
 
+      - name: Build tests
+        run: cmake --build build --config Release --parallel --target PowerDrumMapperTests
+
+      - name: Run tests
+        run: .\build\PowerDrumMapperTests_artefacts\Release\PowerDrumMapperTests.exe
+
       - name: Upload CLAP
         uses: actions/upload-artifact@v4
         with:
@@ -70,6 +76,9 @@ jobs:
       - name: Build
         run: cmake --build build --config Release --parallel --target PowerDrumMapper_VST3 PowerDrumMapper_Standalone PowerDrumMapper_CLAP
 
+      # Unit tests run in the Windows job only (the logic under test is
+      # platform-independent; keeps the macOS job free of GUI-init quirks).
+
       - name: Upload CLAP
         uses: actions/upload-artifact@v4
         with:
@@ -90,3 +99,42 @@ jobs:
           name: PowerDrumMapper-macOS-Standalone
           path: |
             build/PowerDrumMapper_artefacts/Release/Standalone/
+
+  # ============================================================
+  # Release：推送 v* 标签时，把两个平台的产物打包发布到 GitHub Release
+  # ============================================================
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-windows, build-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Pack per-platform zips
+        run: |
+          set -euo pipefail
+          mkdir -p stage/Windows/CLAP stage/Windows/VST3 stage/Windows/Standalone
+          mkdir -p stage/macOS/CLAP   stage/macOS/VST3   stage/macOS/Standalone
+          cp -r dist/PowerDrumMapper-Windows-CLAP/.       stage/Windows/CLAP/
+          cp -r dist/PowerDrumMapper-Windows-VST3/.        stage/Windows/VST3/
+          cp -r dist/PowerDrumMapper-Windows-Standalone/.  stage/Windows/Standalone/
+          cp -r dist/PowerDrumMapper-macOS-CLAP/.          stage/macOS/CLAP/
+          cp -r dist/PowerDrumMapper-macOS-VST3/.          stage/macOS/VST3/
+          cp -r dist/PowerDrumMapper-macOS-Standalone/.    stage/macOS/Standalone/
+          # MSVC import-library leftovers are useless to plugin users.
+          find stage \( -name '*.exp' -o -name '*.lib' \) -delete
+          (cd stage && zip -qr ../PowerDrumMapper-Windows.zip Windows && zip -qr ../PowerDrumMapper-macOS.zip macOS)
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          generate_release_notes: true
+          files: |
+            PowerDrumMapper-Windows.zip
+            PowerDrumMapper-macOS.zip
