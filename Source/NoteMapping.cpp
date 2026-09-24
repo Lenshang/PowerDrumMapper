@@ -59,6 +59,15 @@ bool NoteMapping::remap (int inNote, int inChannel, int& outNote, int& outChanne
     return false;
 }
 
+const MappingEntry* NoteMapping::findEntryBySourceNote (int noteNumber) const noexcept
+{
+    for (const auto& e : entries)
+        if (e.sourceNote == noteNumber)
+            return &e;
+
+    return nullptr;
+}
+
 juce::ValueTree NoteMapping::toValueTree() const
 {
     juce::ValueTree root ("Mapping");

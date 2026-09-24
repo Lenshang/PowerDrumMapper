@@ -39,44 +39,260 @@ namespace
         int row = 0;
     };
 
-    // Combo box cell for selecting a MIDI note (0-127).
-    class NoteComboCell : public juce::ComboBox
+    //==========================================================================
+    // A keyboard-focus-free dropdown list shown under a NoteTextCell while the
+    // user types. Lives in its own temporary top-level window (like PopupMenu)
+    // so the table cells can't clip it and the text field keeps keyboard focus.
+    class NoteSuggestionPopup
+        : public juce::Component
+        , private juce::ListBoxModel
+        , private juce::Timer
     {
     public:
-        NoteComboCell (DrumMapperAudioProcessor& p, bool isSource)
+        /** Called with the picked note number (only for real matches). */
+        std::function<void (int noteNumber)> onPick;
+
+        NoteSuggestionPopup()
+            : list ("Suggestions", this)
+        {
+            list.setRowHeight (20);
+            list.setColour (juce::ListBox::backgroundColourId, juce::Colour (0xff262626));
+            addAndMakeVisible (list);
+            setOpaque (true);
+        }
+
+        ~NoteSuggestionPopup() override { dismissNow(); }
+
+        /** Shows `matchedNotes` directly under `anchor` (or above it if there is
+            no room). An empty list shows a disabled "(no match)" row. */
+        void show (juce::Component* anchor, const std::vector<int>& matchedNotes)
+        {
+            notes = matchedNotes;
+            anyMatches = ! notes.empty();
+            list.updateContent();
+            list.deselectAllRows();
+            list.repaint();
+
+            const int rowH = list.getRowHeight();
+            const int numRows = anyMatches ? (int) notes.size() : 1;
+            const int height = juce::jmin (numRows * rowH + 2, 12 * rowH);
+
+            auto area = anchor->getScreenBounds();
+            const int width = juce::jmax (area.getWidth(), 140);
+
+            const auto* display = juce::Desktop::getInstance().getDisplays().getDisplayForRect (area);
+            const auto screenArea = display != nullptr ? display->userBounds.toNearestInt()
+                                                       : juce::Rectangle<int> {};
+
+            if (! screenArea.isEmpty())
+                area.setX (juce::jlimit (screenArea.getX(), juce::jmax (screenArea.getX(), screenArea.getRight() - width),
+                                         area.getX()));
+
+            int y = area.getBottom() + 1;
+            if (! screenArea.isEmpty() && y + height > screenArea.getBottom())
+                y = area.getY() - height - 1;
+
+            if (! isOnDesktop())
+            {
+                addToDesktop (juce::ComponentPeer::windowIsTemporary);
+                setAlwaysOnTop (true);
+            }
+
+            setBounds (area.getX(), y, width, height);
+            setVisible (true);
+        }
+
+        /** Dismisses, but not while the mouse is heading into the list (a focus
+            loss from the text field precedes every click on a row). */
+        void requestDismiss()
+        {
+            if (isOnDesktop() && isVisible() && isMouseOver (true))
+                startTimerHz (8);
+            else
+                dismissNow();
+        }
+
+        void dismissNow()
+        {
+            stopTimer();
+            if (isOnDesktop())
+                removeFromDesktop();
+            setVisible (false);
+        }
+
+    private:
+        int getNumRows() override { return anyMatches ? (int) notes.size() : 1; }
+
+        void paintListBoxItem (int row, juce::Graphics& g, int width, int height, bool rowIsSelected) override
+        {
+            if (rowIsSelected)
+                g.fillAll (juce::Colour (0xff4a6984));
+            else
+                g.fillAll (juce::Colour (0xff262626));
+
+            g.setFont (juce::FontOptions (14.0f));
+
+            if (! anyMatches)
+            {
+                g.setColour (juce::Colours::grey);
+                g.drawText ("(no match)", 6, 0, width - 8, height, juce::Justification::centredLeft);
+                return;
+            }
+
+            if (! juce::isPositiveAndBelow (row, (int) notes.size()))
+                return;
+
+            g.setColour (rowIsSelected ? juce::Colours::white : juce::Colours::grey.withAlpha (0.9f));
+            g.drawText (NoteNameUtils::midiToNameWithNumber (notes[(size_t) row]),
+                        6, 0, width - 8, height, juce::Justification::centredLeft);
+        }
+
+        void listBoxItemClicked (int row, const juce::MouseEvent&) override
+        {
+            if (anyMatches && juce::isPositiveAndBelow (row, (int) notes.size()) && onPick)
+                onPick (notes[(size_t) row]);
+        }
+
+        void timerCallback() override
+        {
+            if (isMouseOver (true))
+                startTimerHz (8);   // keep waiting until the mouse leaves
+            else
+                dismissNow();
+        }
+
+        void resized() override { list.setBounds (getLocalBounds()); }
+
+        juce::ListBox list;
+        std::vector<int> notes;
+        bool anyMatches = false;
+    };
+
+    //==========================================================================
+    // Note cell: a plain text editor with an autocomplete dropdown.
+    //
+    // JUCE's editable ComboBox hides its text field inside a private label and
+    // reports stale text while typing (Label::getText() skips the active
+    // editor by default), so we own the editor directly: text changes, Return,
+    // Escape and focus events are all synchronous and reliable.
+    //
+    // Typing pops up the live-filtered suggestion list; nothing is committed
+    // until editing finishes (Enter / focus loss with a parseable text like
+    // "C1", "38", "C1 (36)") or a suggestion is clicked. Unparseable text
+    // always snaps back to the current value, so invalid input can never take
+    // effect. Used for BOTH note columns (source / target).
+    class NoteTextCell : public juce::TextEditor
+    {
+    public:
+        NoteTextCell (DrumMapperAudioProcessor& p, bool isSource)
             : processor (p), source (isSource)
         {
-            for (int n = 0; n < 128; ++n)
-                addItem (NoteNameUtils::midiToNameWithNumber (n), n + 1); // combo id = note + 1
+            setMultiLine (false, false);
+            setSelectAllWhenFocused (true);
+            setIndents (4, 0);
+            setJustification (juce::Justification::centredLeft);
+            setFont (juce::FontOptions (14.0f));
+            setColour (backgroundColourId, juce::Colours::transparentBlack);
+            setColour (outlineColourId, juce::Colours::transparentBlack);
+            setColour (focusedOutlineColourId, juce::Colours::steelblue.withAlpha (0.6f));
 
-            onChange = [this] { commit(); };
+            onTextChange = [this] { showSuggestions(); };
+            onReturnKey  = [this] { finishEditing (parseOrCurrent(), true); };
+            onEscapeKey  = [this] { finishEditing (currentEntryNote(), true); };
+            onFocusLost  = [this]
+            {
+                suggestions.requestDismiss();
+                finishEditing (parseOrCurrent(), false);
+            };
+        }
+
+        ~NoteTextCell() override
+        {
+            suggestions.onPick = nullptr;
+            suggestions.dismissNow();
+        }
+
+        /** Clicking into the cell (without typing) shows the full list. */
+        void focusGained (juce::Component::FocusChangeType cause) override
+        {
+            juce::TextEditor::focusGained (cause);   // select-all + caret setup
+            showSuggestions();
         }
 
         void setRow (int newRow)
         {
             row = newRow;
-            const auto entry = processor.getEntry (row);
-            const int note = source ? entry.sourceNote : entry.targetNote;
-            setSelectedId (note + 1, juce::dontSendNotification);
-        }
-
-        void commit()
-        {
-            auto entry = processor.getEntry (row);
-            const int note = juce::jlimit (0, 127, getSelectedId() - 1);
-
-            if (source)
-                entry.sourceNote = note;
-            else
-                entry.targetNote = note;
-
-            processor.setEntry (row, entry);
+            suggestions.dismissNow();   // e.g. the row was scrolled away
+            setText (NoteNameUtils::midiToNameWithNumber (currentEntryNote()),
+                     juce::dontSendNotification);
         }
 
     private:
+        int currentEntryNote() const
+        {
+            const auto entry = processor.getEntry (row);
+            return source ? entry.sourceNote : entry.targetNote;
+        }
+
+        int parseOrCurrent() const
+        {
+            const int parsed = NoteNameUtils::parseNoteText (getText());
+            return parsed >= 0 ? parsed : currentEntryNote();
+        }
+
+        /** Commits a note (only when it changed), then always displays its
+            canonical label, so valid shortcuts like "c1" normalise to "C1 (36)"
+            and invalid text reverts to the current value. */
+        void finishEditing (int note, bool dismissNow)
+        {
+            note = juce::jlimit (0, 127, note);
+
+            auto entry = processor.getEntry (row);
+            const int current = source ? entry.sourceNote : entry.targetNote;
+
+            if (current != note)
+            {
+                if (source)
+                    entry.sourceNote = note;
+                else
+                    entry.targetNote = note;
+
+                processor.setEntry (row, entry);
+            }
+
+            setText (NoteNameUtils::midiToNameWithNumber (note), juce::dontSendNotification);
+
+            if (dismissNow)
+                suggestions.dismissNow();
+            else
+                suggestions.requestDismiss();
+        }
+
+        void showSuggestions()
+        {
+            const auto text = getText().trim();
+
+            std::vector<int> matches;
+            if (text.isEmpty())
+            {
+                for (int n = 0; n < 128; ++n)
+                    matches.push_back (n);
+            }
+            else
+            {
+                for (int n = 0; n < 128; ++n)
+                    if (NoteNameUtils::midiToNameWithNumber (n).containsIgnoreCase (text))
+                        matches.push_back (n);
+            }
+
+            suggestions.onPick = [this] (int note) { finishEditing (note, true); };
+            suggestions.show (this, matches);
+        }
+
         DrumMapperAudioProcessor& processor;
         const bool source;
         int row = 0;
+        NoteSuggestionPopup suggestions;
     };
 
     // Combo box cell for selecting a channel ("ALL" / 1..16).
@@ -318,17 +534,17 @@ juce::Component* MappingTableComponent::refreshComponentForCell (int rowNumber, 
         }
         case sourceNoteCol:
         {
-            auto* c = dynamic_cast<NoteComboCell*> (existingToUpdate);
+            auto* c = dynamic_cast<NoteTextCell*> (existingToUpdate);
             if (c == nullptr)
-                c = new NoteComboCell (processor, true);
+                c = new NoteTextCell (processor, true);
             c->setRow (rowNumber);
             return c;
         }
         case targetNoteCol:
         {
-            auto* c = dynamic_cast<NoteComboCell*> (existingToUpdate);
+            auto* c = dynamic_cast<NoteTextCell*> (existingToUpdate);
             if (c == nullptr)
-                c = new NoteComboCell (processor, false);
+                c = new NoteTextCell (processor, false);
             c->setRow (rowNumber);
             return c;
         }

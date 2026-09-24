@@ -28,28 +28,28 @@ jobs:
         run: cmake -B build -S . -A x64
 
       - name: Build
-        run: cmake --build build --config Release --parallel --target BitwigDrumMapper_VST3 BitwigDrumMapper_Standalone BitwigDrumMapper_CLAP
+        run: cmake --build build --config Release --parallel --target PowerDrumMapper_VST3 PowerDrumMapper_Standalone PowerDrumMapper_CLAP
 
       - name: Upload CLAP
         uses: actions/upload-artifact@v4
         with:
-          name: BitwigDrumMapper-Windows-CLAP
+          name: PowerDrumMapper-Windows-CLAP
           path: |
-            build/BitwigDrumMapper_artefacts/Release/CLAP/
+            build/PowerDrumMapper_artefacts/Release/CLAP/
 
       - name: Upload VST3
         uses: actions/upload-artifact@v4
         with:
-          name: BitwigDrumMapper-Windows-VST3
+          name: PowerDrumMapper-Windows-VST3
           path: |
-            build/BitwigDrumMapper_artefacts/Release/VST3/
+            build/PowerDrumMapper_artefacts/Release/VST3/
 
       - name: Upload Standalone
         uses: actions/upload-artifact@v4
         with:
-          name: BitwigDrumMapper-Windows-Standalone
+          name: PowerDrumMapper-Windows-Standalone
           path: |
-            build/BitwigDrumMapper_artefacts/Release/Standalone/
+            build/PowerDrumMapper_artefacts/Release/Standalone/
 
   # ============================================================
   # macOS 构建 (Universal Binary: Intel + Apple Silicon)
@@ -68,25 +68,25 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
-        run: cmake --build build --config Release --parallel --target BitwigDrumMapper_VST3 BitwigDrumMapper_Standalone BitwigDrumMapper_CLAP
+        run: cmake --build build --config Release --parallel --target PowerDrumMapper_VST3 PowerDrumMapper_Standalone PowerDrumMapper_CLAP
 
       - name: Upload CLAP
         uses: actions/upload-artifact@v4
         with:
-          name: BitwigDrumMapper-macOS-CLAP
+          name: PowerDrumMapper-macOS-CLAP
           path: |
-            build/BitwigDrumMapper_artefacts/Release/CLAP/
+            build/PowerDrumMapper_artefacts/Release/CLAP/
 
       - name: Upload VST3
         uses: actions/upload-artifact@v4
         with:
-          name: BitwigDrumMapper-macOS-VST3
+          name: PowerDrumMapper-macOS-VST3
           path: |
-            build/BitwigDrumMapper_artefacts/Release/VST3/
+            build/PowerDrumMapper_artefacts/Release/VST3/
 
       - name: Upload Standalone
         uses: actions/upload-artifact@v4
         with:
-          name: BitwigDrumMapper-macOS-Standalone
+          name: PowerDrumMapper-macOS-Standalone
           path: |
-            build/BitwigDrumMapper_artefacts/Release/Standalone/
+            build/PowerDrumMapper_artefacts/Release/Standalone/

@@ -95,6 +95,43 @@ namespace NoteNameUtils
         return noteNumber;
     }
 
+    int parseNoteText (const juce::String& input)
+    {
+        const auto t = input.trim();
+        if (t.isEmpty())
+            return -1;
+
+        // "C1 (36)" style: trust only a complete parenthesised number, so a
+        // half-typed label like "C1 (3" is rejected rather than misparsed.
+        if (t.containsChar ('(') || t.containsChar (')'))
+        {
+            if (! (t.containsChar ('(') && t.endsWithChar (')')))
+                return -1;
+
+            const auto inner = t.fromFirstOccurrenceOf ("(", false, false)
+                                  .upToLastOccurrenceOf (")", false, false)
+                                  .trim();
+
+            if (! inner.containsOnly ("0123456789"))
+                return -1;
+
+            const int value = inner.getIntValue();
+            return (value >= 0 && value < 128) ? value : -1;
+        }
+
+        const int byName = nameToMidi (t);
+        if (byName >= 0)
+            return byName;
+
+        if (t.containsOnly ("0123456789"))
+        {
+            const int value = t.getIntValue();
+            return (value >= 0 && value < 128) ? value : -1;
+        }
+
+        return -1;
+    }
+
     juce::String channelToString (int channel)
     {
         return isAllChannels (channel) ? "ALL" : juce::String (channel);

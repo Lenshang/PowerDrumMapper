@@ -27,6 +27,11 @@ namespace NoteNameUtils
     /** Parses a note name (e.g. "C0", "Db0", "D#1", "C-1") to a MIDI note number. Returns -1 if invalid. */
     int nameToMidi (const juce::String& name);
 
+    /** Parses free text into a MIDI note number. Accepts an exact item label with
+        a parenthesised number ("C1 (36)"), a note name ("C1", "D#2", "Bb0") or a
+        raw number ("36"). Returns -1 when the text is not a usable note. */
+    int parseNoteText (const juce::String& text);
+
     /** Converts a channel (0 = ALL, 1-16) to its display string. */
     juce::String channelToString (int channel);
 

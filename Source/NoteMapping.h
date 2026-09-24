@@ -55,6 +55,10 @@ public:
     */
     bool remap (int inNote, int inChannel, int& outNote, int& outChannel) const noexcept;
 
+    /** Returns the first entry whose source note matches, or nullptr.
+        Used for host note-name queries (CLAP / VST3 / VST2). */
+    const MappingEntry* findEntryBySourceNote (int noteNumber) const noexcept;
+
     /** Serialises the mapping to a ValueTree for host state / preset storage. */
     juce::ValueTree toValueTree() const;
 

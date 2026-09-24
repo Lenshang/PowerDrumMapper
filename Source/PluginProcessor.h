@@ -1,13 +1,14 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
+#include <optional>
 JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE("-Wunused-parameter")
 #include <clap-juce-extensions/clap-juce-extensions.h>
 JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 #include "NoteMapping.h"
 
 /**
-    Main audio processor for the Bitwig Drum Mapper.
+    Main audio processor for PowerDrumMapper.
 
     This is a pure MIDI effect: it has no audio buses. It reads note on/off
     events from the incoming MIDI buffer, remaps their note number and channel
@@ -78,6 +79,12 @@ public:
 
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
+
+    // ---- Host note-name queries (VST3 IUnitInfo pitch names, VST2 effGetMidiKeyName)
+    /** Hosts that support per-note names (Cubase, FL Studio, ...) call this to
+        label notes on their piano roll. Matched on the source note only:
+        names are not channel-specific here. */
+    std::optional<juce::String> getNameForMidiNoteNumber (int note, int midiChannel) override;
 
     // ---- CLAP note-name extension -------------------------------------------
     /** Tells the host we provide custom note names. */

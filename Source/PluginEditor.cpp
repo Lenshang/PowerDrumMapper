@@ -6,7 +6,7 @@ DrumMapperAudioProcessorEditor::DrumMapperAudioProcessorEditor (DrumMapperAudioP
     , processor (p)
     , tableComponent (processor)
 {
-    titleLabel.setText ("Bitwig Drum Mapper", juce::dontSendNotification);
+    titleLabel.setText ("PowerDrumMapper", juce::dontSendNotification);
     titleLabel.setFont (juce::Font (juce::FontOptions (18.0f).withStyle ("Bold")));
     titleLabel.setJustificationType (juce::Justification::centredLeft);
     titleLabel.setColour (juce::Label::textColourId, juce::Colours::white);

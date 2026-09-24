@@ -209,6 +209,21 @@ juce::AudioProcessorEditor* DrumMapperAudioProcessor::createEditor()
 }
 
 //==============================================================================
+// Host note-name queries (VST3 IUnitInfo pitch names / VST2 effGetMidiKeyName)
+//==============================================================================
+std::optional<juce::String> DrumMapperAudioProcessor::getNameForMidiNoteNumber (int note, int /*midiChannel*/)
+{
+    // Note: some hosts query notes outside 0-127, so don't clamp — the lookup
+    // simply fails for anything without an entry.
+    const juce::SpinLock::ScopedLockType sl (mappingLock);
+
+    if (const auto* entry = mapping.findEntryBySourceNote (note))
+        return entry->name;
+
+    return std::nullopt;
+}
+
+//==============================================================================
 // CLAP note-name extension
 //==============================================================================
 uint32_t DrumMapperAudioProcessor::noteNameCount() noexcept
