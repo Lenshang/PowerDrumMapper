@@ -1,5 +1,4 @@
 #include "PluginProcessor.h"
-#include "PluginEditor.h"
 #include "NoteNameUtils.h"
 
 DrumMapperAudioProcessor::DrumMapperAudioProcessor()
@@ -200,12 +199,6 @@ void DrumMapperAudioProcessor::setStateInformation (const void* data, int sizeIn
         if (changed)
             markStateChanged();
     }
-}
-
-//==============================================================================
-juce::AudioProcessorEditor* DrumMapperAudioProcessor::createEditor()
-{
-    return new DrumMapperAudioProcessorEditor (*this);
 }
 
 //==============================================================================

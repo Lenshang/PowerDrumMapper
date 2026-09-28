@@ -4,23 +4,17 @@
 DrumMapperAudioProcessorEditor::DrumMapperAudioProcessorEditor (DrumMapperAudioProcessor& p)
     : juce::AudioProcessorEditor (&p)
     , processor (p)
-    , tableComponent (processor)
+    , bridge (p)
 {
-    titleLabel.setText ("PowerDrumMapper", juce::dontSendNotification);
-    titleLabel.setFont (juce::Font (juce::FontOptions (18.0f).withStyle ("Bold")));
-    titleLabel.setJustificationType (juce::Justification::centredLeft);
-    titleLabel.setColour (juce::Label::textColourId, juce::Colours::white);
-    addAndMakeVisible (titleLabel);
-
-    addAndMakeVisible (tableComponent);
-    tableComponent.refresh();
+    addAndMakeVisible (bridge.getWebComponent());
+    bridge.getWebComponent().goToURL (juce::WebBrowserComponent::getResourceProviderRoot());
 
     processor.addChangeListener (this);
 
     setResizable (true, true);
-    setResizeLimits (400, 250, 1600, 1000);
+    setResizeLimits (480, 320, 1600, 1000);
 
-    setSize (660, 440);
+    setSize (720, 500);
 }
 
 DrumMapperAudioProcessorEditor::~DrumMapperAudioProcessorEditor()
@@ -29,25 +23,21 @@ DrumMapperAudioProcessorEditor::~DrumMapperAudioProcessorEditor()
     processor.removeChangeListener (this);
 }
 
-void DrumMapperAudioProcessorEditor::paint (juce::Graphics& g)
+juce::AudioProcessorEditor* DrumMapperAudioProcessor::createEditor()
 {
-    g.fillAll (juce::Colour (0xff2b2b2b));
+    return new DrumMapperAudioProcessorEditor (*this);
 }
 
 void DrumMapperAudioProcessorEditor::resized()
 {
-    auto area = getLocalBounds().reduced (10);
-
-    titleLabel.setBounds (area.removeFromTop (28));
-    area.removeFromTop (6);
-
-    tableComponent.setBounds (area);
+    bridge.getWebComponent().setBounds (getLocalBounds());
 }
 
 void DrumMapperAudioProcessorEditor::changeListenerCallback (juce::ChangeBroadcaster*)
 {
-    tableComponent.refresh();
-    repaint();
+    // A structural change (row added/removed/cleared, import, host preset
+    // load) must be mirrored into the page.
+    bridge.pushState();
 }
 
 void DrumMapperAudioProcessorEditor::parentHierarchyChanged()

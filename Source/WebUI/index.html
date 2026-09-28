@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PowerDrumMapper</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <ellipse cx="12" cy="6.5" rx="8" ry="3"/>
+          <path d="M4 6.5v7c0 1.66 3.58 3 8 3s8-1.34 8-3v-7"/>
+          <path d="M4 13.5v4c0 1.66 3.58 3 8 3s8-1.34 8-3v-4"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>PowerDrumMapper</h1>
+        <p>Remap any note to any drum &mdash; per channel, in order, first match wins.</p>
+      </div>
+    </div>
+
+    <div class="stats-panel">
+      <div class="stat">
+        <div class="panel-label">Rules</div>
+        <div class="stat-value" id="statRules">0</div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat">
+        <div class="panel-label">Unmatched notes</div>
+        <div class="stat-value muted">pass through</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="table-panel">
+    <div class="table-head">
+      <div class="col-name">Name</div>
+      <div class="col-note">Source Note</div>
+      <div class="col-channel">Src Ch</div>
+      <div class="col-note">Target Note</div>
+      <div class="col-channel">Tgt Ch</div>
+      <div class="col-actions"></div>
+    </div>
+    <div class="table-body" id="tableBody" tabindex="-1"></div>
+    <div class="empty-state" id="emptyState" hidden>
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
+           stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <ellipse cx="12" cy="6.5" rx="8" ry="3"/>
+        <path d="M4 6.5v7c0 1.66 3.58 3 8 3s8-1.34 8-3v-7"/>
+        <path d="M4 13.5v4c0 1.66 3.58 3 8 3s8-1.34 8-3v-4"/>
+      </svg>
+      <p>No mapping rules yet</p>
+      <p class="empty-hint">Each rule sends one note to another note and channel &mdash;
+         point your e-drum kit at any sound source. Notes without a rule are passed through untouched.</p>
+      <div class="empty-actions">
+        <button type="button" class="btn primary" id="emptyAddBtn">+ Add a rule</button>
+        <button type="button" class="btn" id="emptyImportBtn">Import map&hellip;</button>
+      </div>
+    </div>
+  </main>
+
+  <footer class="toolbar">
+    <div class="toolbar-left">
+      <button type="button" class="btn" id="importBtn" title="Import a .bwdrm / .drm / CSV mapping file">Import&hellip;</button>
+      <button type="button" class="btn" id="exportBtn" title="Export the mapping as .bwdrm">Export&hellip;</button>
+      <span class="entry-count" id="entryCount"></span>
+    </div>
+    <div class="toolbar-right">
+      <button type="button" class="btn danger-ghost" id="clearBtn" title="Remove all rules">Clear</button>
+      <button type="button" class="btn primary" id="addBtn">+ Add</button>
+    </div>
+  </footer>
+
+</div>
+
+<div id="toastHost" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

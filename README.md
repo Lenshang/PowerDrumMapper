@@ -31,8 +31,8 @@ Each mapping rule defines:
 ## Features
 
 - **Real-time MIDI remapping** — Note On/Off events are remapped with zero-latency try-lock processing
-- **Editable table UI** — Add, remove, and edit mapping entries; note columns are type-to-filter text cells: typing pops a live-filtered suggestion list, invalid input can never take effect
-- **Resizable window** — Drag to resize; table columns adapt automatically
+- **Modern WebView UI** — The editor is an embedded WebView2 (JUCE 8) page, served fully offline from binary data; note cells are type-to-filter with a live-filtered suggestion list, invalid input can never take effect
+- **Resizable window** — Drag to resize; the layout adapts automatically
 - **Note names in the host** — Mapping names are reported per format: CLAP `note-name` extension (Bitwig), VST3 `IUnitInfo` pitch names (Cubase, FL Studio, ...) and VST2 `effGetMidiKeyName`, all via `AudioProcessor::getNameForMidiNoteNumber()`
 - **Import / Export** — Save and load drum maps in `.bwdrm` (CSV) or Cubase `.drm` (XML) format
 - **Cross-platform** — Windows and macOS (Universal Binary)
@@ -154,10 +154,11 @@ PowerDrumMapper/
 │   └── ProcessorTests.cpp            # Headless test runner
 └── Source/
     ├── PluginProcessor.h/.cpp        # AudioProcessor + CLAP note-name
-    ├── PluginEditor.h/.cpp           # Editor (resizable, DPI handling)
+    ├── PluginEditor.h/.cpp           # Editor (WebView host, DPI handling)
+    ├── WebViewBridge.h/.cpp          # WebView <-> processor bridge + offline page serving
+    ├── WebUI/                        # Embedded web UI (index.html / style.css / app.js)
     ├── NoteMapping.h/.cpp            # Core data model + CSV/XML I/O
-    ├── NoteNameUtils.h/.cpp          # Note name <-> MIDI number conversion
-    └── MappingTableComponent.h/.cpp  # Table UI (combo boxes, buttons)
+    └── NoteNameUtils.h/.cpp          # Note name <-> MIDI number conversion
 ```
 
 ## Tech Stack

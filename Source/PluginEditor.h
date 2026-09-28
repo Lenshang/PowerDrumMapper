@@ -1,16 +1,19 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
-#include "MappingTableComponent.h"
+#include "WebViewBridge.h"
 
 class DrumMapperAudioProcessor;
 
 /**
-    The plugin editor. Hosts the mapping table and listens to the processor so
-    that a host-driven state change (preset load) refreshes the table.
+    The plugin editor: a single WebView component filling the window.
 
-    The window is resizable. High-DPI scaling is handled in the CLAP wrapper
-    (guiWin32Attach) so the editor always works in physical pixels.
+    All widgets (mapping table, note/channel editors, import/export) live in
+    the embedded web page (Source/WebUI); this class only hosts the view and
+    forwards host-driven change messages into the page (preset loads from the
+    host), plus the CLAP-wrapper DPI workaround from the previous native UI.
+
+    The window is resizable.
 */
 class DrumMapperAudioProcessorEditor
     : public juce::AudioProcessorEditor
@@ -21,7 +24,6 @@ public:
     explicit DrumMapperAudioProcessorEditor (DrumMapperAudioProcessor&);
     ~DrumMapperAudioProcessorEditor() override;
 
-    void paint (juce::Graphics&) override;
     void resized() override;
     void parentHierarchyChanged() override;
 
@@ -31,9 +33,7 @@ private:
     void timerCallback() override;
 
     DrumMapperAudioProcessor& processor;
-
-    juce::Label titleLabel;
-    MappingTableComponent tableComponent;
+    WebViewUIBridge bridge;
 
     int resizeCounter = 0;
 
